@@ -15,7 +15,6 @@ app.use(express.json());
 
 const JWT_SECRET = process.env.JWT_SECRET || 'your_jwt_secret_key';
 
-// Middleware untuk autentikasi token
 const authenticateToken = (req, res, next) => {
   const authHeader = req.headers['authorization'];
   const token = authHeader && authHeader.split(' ')[1];
@@ -129,6 +128,7 @@ app.get('/api/kategori', async (req, res) => {
     const result = await pool.query('SELECT * FROM kategori_makanan');
     res.json({ message: 'Success', data: result.rows });
   } catch (err) {
+    console.error('ERROR /api/kategori:', err);
     res.status(500).json({ message: err.message, data: null });
   }
 });
