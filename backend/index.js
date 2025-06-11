@@ -5,6 +5,9 @@ const pool = require('./db');
 const jwt = require('jsonwebtoken');
 const nodemailer = require('nodemailer');
 const dotenv = require('dotenv');
+const multer = require('multer');
+const { Client } = require('@gradio/client');
+const upload = multer();
 
 dotenv.config();
 
@@ -112,12 +115,11 @@ app.post('/api/reset-password', async (req, res) => {
     await pool.query('UPDATE users SET password = $1 WHERE id = $2', [hashedPassword, decoded.id]);
     res.json({ message: 'Password reset successful', data: null });
   } catch (err) {
-    console.error('RESET PASSWORD ERROR:', err); // Tambah log error detail
+    console.error('RESET PASSWORD ERROR:', err); 
     res.status(400).json({ message: 'Invalid or expired token', data: null });
   }
 });
 
-// Contoh endpoint yang butuh autentikasi
 app.get('/api/home', authenticateToken, (req, res) => {
   res.json({ message: 'Welcome to Home!', user: req.user });
 });
@@ -133,7 +135,6 @@ app.get('/api/kategori', async (req, res) => {
   }
 });
 
-// Ambil makanan berdasarkan kategori (termasuk relasi banyak ke banyak)
 app.get('/api/makanan', async (req, res) => {
   const kategoriId = req.query.kategori_id;
   try {
@@ -152,6 +153,19 @@ app.get('/api/makanan', async (req, res) => {
     res.json({ message: 'Success', data: result.rows });
   } catch (err) {
     res.status(500).json({ message: err.message, data: null });
+  }
+});
+
+app.post('/api/predict', upload.single('file'), async (req, res) => {
+  try {
+    if (!req.file) return res.status(400).json({ error: 'No file uploaded' });
+    const client = await Client.connect('rickysptra24/FoodLens');
+    const result = await client.predict('/predict', {
+      image: req.file.buffer,
+    });
+    res.json(result.data);
+  } catch (err) {
+    res.status(500).json({ error: 'Prediction failed', detail: err.message });
   }
 });
 
