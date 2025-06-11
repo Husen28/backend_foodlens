@@ -121,6 +121,26 @@ app.post('/api/reset-password', async (req, res) => {
   }
 });
 
+// Perbaikan CORS agar selalu mengizinkan request dari frontend lokal & Netlify
+const allowedOrigins = [
+  'http://localhost:5173',
+  'https://foodlens.netlify.app',
+  'https://backend-foodlens.vercel.app'
+];
+app.use((req, res, next) => {
+  const origin = req.headers.origin;
+  if (allowedOrigins.includes(origin)) {
+    res.setHeader('Access-Control-Allow-Origin', origin);
+  }
+  res.setHeader('Access-Control-Allow-Methods', 'GET,POST,PUT,DELETE,OPTIONS');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type,Authorization');
+  res.setHeader('Access-Control-Allow-Credentials', 'true');
+  if (req.method === 'OPTIONS') {
+    return res.status(200).end();
+  }
+  next();
+});
+
 // Contoh endpoint yang butuh autentikasi
 app.get('/api/home', authenticateToken, (req, res) => {
   res.json({ message: 'Welcome to Home!', user: req.user });
@@ -161,15 +181,6 @@ app.get('/api/makanan', async (req, res) => {
 
 // Endpoint prediksi makanan
 app.post('/api/predict', upload.single('file'), async (req, res) => {
-  // CORS manual untuk serverless (Vercel)
-  res.setHeader('Access-Control-Allow-Origin', '*');
-  res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
-
-  if (req.method === 'OPTIONS') {
-    return res.status(200).end();
-  }
-
   try {
     if (!req.file) {
       return res.status(400).json({ message: 'No file uploaded' });
@@ -177,11 +188,10 @@ app.post('/api/predict', upload.single('file'), async (req, res) => {
     const formData = new FormData();
     formData.append('file', req.file.buffer, req.file.originalname);
 
-    // Ganti URL di bawah sesuai endpoint Gradio Spaces Anda
+    // Tambahkan API key Hugging Face di header jika diperlukan
     const response = await fetch('https://rickysptra24-foodlens.hf.space/api/predict/', {
       method: 'POST',
       body: formData,
-      // headers: { 'Authorization': `Bearer ${process.env.HF_API_KEY}` }, // Jika butuh API key
     });
     const result = await response.json();
     res.json(result);
