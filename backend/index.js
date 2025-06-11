@@ -5,10 +5,6 @@ const pool = require('./db');
 const jwt = require('jsonwebtoken');
 const nodemailer = require('nodemailer');
 const dotenv = require('dotenv');
-const fetch = require('node-fetch');
-const multer = require('multer');
-const FormData = require('form-data');
-const upload = multer();
 
 dotenv.config();
 
@@ -121,17 +117,6 @@ app.post('/api/reset-password', async (req, res) => {
   }
 });
 
-// Ganti middleware CORS custom/manual dengan package cors dari npm
-const allowedOrigins = [
-  'http://localhost:5173',
-  'https://foodlens.netlify.app',
-  'https://backend-foodlens.vercel.app'
-];
-app.use(cors({
-  origin: allowedOrigins,
-  credentials: true,
-}));
-
 // Contoh endpoint yang butuh autentikasi
 app.get('/api/home', authenticateToken, (req, res) => {
   res.json({ message: 'Welcome to Home!', user: req.user });
@@ -167,27 +152,6 @@ app.get('/api/makanan', async (req, res) => {
     res.json({ message: 'Success', data: result.rows });
   } catch (err) {
     res.status(500).json({ message: err.message, data: null });
-  }
-});
-
-// Endpoint prediksi makanan
-app.post('/api/predict', upload.single('file'), async (req, res) => {
-  try {
-    if (!req.file) {
-      return res.status(400).json({ message: 'No file uploaded' });
-    }
-    const formData = new FormData();
-    formData.append('file', req.file.buffer, req.file.originalname);
-
-    // Tambahkan API key Hugging Face di header jika diperlukan
-    const response = await fetch('https://rickysptra24-foodlens.hf.space/api/predict/', {
-      method: 'POST',
-      body: formData,
-    });
-    const result = await response.json();
-    res.json(result);
-  } catch (err) {
-    res.status(500).json({ message: 'Prediction failed', error: err.message });
   }
 });
 
