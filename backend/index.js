@@ -163,7 +163,18 @@ app.get('/api/makanan', async (req, res) => {
   }
 });
 
+// Handler OPTIONS untuk /api/predict agar CORS preflight selalu OK
+app.options('/api/predict', (req, res) => {
+  res.setHeader('Access-Control-Allow-Origin', 'http://localhost:5173'); // atau Netlify jika sudah production
+  res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+  res.status(204).end();
+});
+
 app.post('/api/predict', upload.single('file'), async (req, res) => {
+  res.setHeader('Access-Control-Allow-Origin', 'http://localhost:5173'); // atau Netlify jika sudah production
+  res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
   try {
     if (!req.file) return res.status(400).json({ error: 'No file uploaded' });
     const client = await Client.connect('rickysptra24/FoodLens');
