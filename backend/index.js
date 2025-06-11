@@ -5,6 +5,9 @@ const pool = require('./db');
 const jwt = require('jsonwebtoken');
 const nodemailer = require('nodemailer');
 const dotenv = require('dotenv');
+const multer = require('multer');
+const { Client } = require('@gradio/client');
+const upload = multer();
 
 dotenv.config();
 
