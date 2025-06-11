@@ -17,7 +17,7 @@ function getAllowedOrigin(req) {
   ];
   const origin = req.headers.origin;
   if (allowed.includes(origin)) return origin;
-  return allowed[0]; // fallback ke localhost
+  return '*'; // fallback ke * agar tidak error CORS di dev/preview
 }
 
 dotenv.config();
@@ -168,18 +168,19 @@ app.get('/api/makanan', async (req, res) => {
   }
 });
 
-// Handler OPTIONS untuk /api/predict agar CORS preflight selalu OK
-app.options('/api/predict', (req, res) => {
+// Handler CORS manual untuk semua method di /api/predict
+app.use('/api/predict', (req, res, next) => {
   res.setHeader('Access-Control-Allow-Origin', getAllowedOrigin(req));
-  res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
+  res.setHeader('Access-Control-Allow-Methods', 'GET,POST,OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
-  res.status(204).end();
+  if (req.method === 'OPTIONS') {
+    res.status(204).end();
+    return;
+  }
+  next();
 });
 
 app.post('/api/predict', upload.single('file'), async (req, res) => {
-  res.setHeader('Access-Control-Allow-Origin', getAllowedOrigin(req));
-  res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
   try {
     if (!req.file) return res.status(400).json({ error: 'No file uploaded' });
     const client = await Client.connect('rickysptra24/FoodLens');
