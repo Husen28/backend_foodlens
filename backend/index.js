@@ -5,22 +5,12 @@ const pool = require('./db');
 const jwt = require('jsonwebtoken');
 const nodemailer = require('nodemailer');
 const dotenv = require('dotenv');
-const multer = require('multer');
-const { Client } = require('@gradio/client');
-const upload = multer();
 
 dotenv.config();
 
 const app = express();
 
-app.use(cors({
-  origin: [
-    'http://localhost:5173',
-    'https://foodlens.netlify.app',
-  ],
-  methods: ['GET', 'POST', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization'],
-}));
+app.use(cors());
 app.use(express.json());
 
 const JWT_SECRET = process.env.JWT_SECRET || 'your_jwt_secret_key';
@@ -122,11 +112,12 @@ app.post('/api/reset-password', async (req, res) => {
     await pool.query('UPDATE users SET password = $1 WHERE id = $2', [hashedPassword, decoded.id]);
     res.json({ message: 'Password reset successful', data: null });
   } catch (err) {
-    console.error('RESET PASSWORD ERROR:', err); 
+    console.error('RESET PASSWORD ERROR:', err); // Tambah log error detail
     res.status(400).json({ message: 'Invalid or expired token', data: null });
   }
 });
 
+// Contoh endpoint yang butuh autentikasi
 app.get('/api/home', authenticateToken, (req, res) => {
   res.json({ message: 'Welcome to Home!', user: req.user });
 });
@@ -142,6 +133,7 @@ app.get('/api/kategori', async (req, res) => {
   }
 });
 
+// Ambil makanan berdasarkan kategori (termasuk relasi banyak ke banyak)
 app.get('/api/makanan', async (req, res) => {
   const kategoriId = req.query.kategori_id;
   try {
@@ -163,16 +155,27 @@ app.get('/api/makanan', async (req, res) => {
   }
 });
 
+// Helper untuk dynamic CORS origin (Netlify & localhost)
+function getAllowedOrigin(req) {
+  const allowed = [
+    'http://localhost:5173',
+    'https://foodlens.netlify.app',
+  ];
+  const origin = req.headers.origin;
+  if (allowed.includes(origin)) return origin;
+  return allowed[0]; // fallback ke localhost
+}
+
 // Handler OPTIONS untuk /api/predict agar CORS preflight selalu OK
 app.options('/api/predict', (req, res) => {
-  res.setHeader('Access-Control-Allow-Origin', 'http://localhost:5173'); // atau Netlify jika sudah production
+  res.setHeader('Access-Control-Allow-Origin', getAllowedOrigin(req));
   res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
   res.status(204).end();
 });
 
 app.post('/api/predict', upload.single('file'), async (req, res) => {
-  res.setHeader('Access-Control-Allow-Origin', 'http://localhost:5173'); // atau Netlify jika sudah production
+  res.setHeader('Access-Control-Allow-Origin', getAllowedOrigin(req));
   res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
   try {
