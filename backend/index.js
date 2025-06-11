@@ -121,25 +121,16 @@ app.post('/api/reset-password', async (req, res) => {
   }
 });
 
-// Perbaikan CORS agar selalu mengizinkan request dari frontend lokal & Netlify
+// Ganti middleware CORS custom/manual dengan package cors dari npm
 const allowedOrigins = [
   'http://localhost:5173',
   'https://foodlens.netlify.app',
   'https://backend-foodlens.vercel.app'
 ];
-app.use((req, res, next) => {
-  const origin = req.headers.origin;
-  if (allowedOrigins.includes(origin)) {
-    res.setHeader('Access-Control-Allow-Origin', origin);
-  }
-  res.setHeader('Access-Control-Allow-Methods', 'GET,POST,PUT,DELETE,OPTIONS');
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type,Authorization');
-  res.setHeader('Access-Control-Allow-Credentials', 'true');
-  if (req.method === 'OPTIONS') {
-    return res.status(200).end();
-  }
-  next();
-});
+app.use(cors({
+  origin: allowedOrigins,
+  credentials: true,
+}));
 
 // Contoh endpoint yang butuh autentikasi
 app.get('/api/home', authenticateToken, (req, res) => {
