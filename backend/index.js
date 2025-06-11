@@ -5,6 +5,10 @@ const pool = require('./db');
 const jwt = require('jsonwebtoken');
 const nodemailer = require('nodemailer');
 const dotenv = require('dotenv');
+const fetch = require('node-fetch');
+const multer = require('multer');
+const FormData = require('form-data');
+const upload = multer();
 
 dotenv.config();
 
@@ -90,7 +94,7 @@ app.post('/api/forgot-password', async (req, res) => {
         pass: process.env.EMAIL_PASS,
       },
     });
-    const resetLink = `${process.env.FRONTEND_URL}/#/reset-password?token=${resetToken}`;
+    const resetLink = `http://localhost:5173/#/reset-password?token=${resetToken}`;
     await transporter.sendMail({
       from: process.env.EMAIL_USER,
       to: email,
@@ -152,6 +156,37 @@ app.get('/api/makanan', async (req, res) => {
     res.json({ message: 'Success', data: result.rows });
   } catch (err) {
     res.status(500).json({ message: err.message, data: null });
+  }
+});
+
+// Endpoint prediksi makanan
+app.post('/api/predict', upload.single('file'), async (req, res) => {
+  // CORS manual untuk serverless (Vercel)
+  res.setHeader('Access-Control-Allow-Origin', '*');
+  res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+
+  if (req.method === 'OPTIONS') {
+    return res.status(200).end();
+  }
+
+  try {
+    if (!req.file) {
+      return res.status(400).json({ message: 'No file uploaded' });
+    }
+    const formData = new FormData();
+    formData.append('file', req.file.buffer, req.file.originalname);
+
+    // Ganti URL di bawah sesuai endpoint Gradio Spaces Anda
+    const response = await fetch('https://rickysptra24-foodlens.hf.space/api/predict/', {
+      method: 'POST',
+      body: formData,
+      // headers: { 'Authorization': `Bearer ${process.env.HF_API_KEY}` }, // Jika butuh API key
+    });
+    const result = await response.json();
+    res.json(result);
+  } catch (err) {
+    res.status(500).json({ message: 'Prediction failed', error: err.message });
   }
 });
 
