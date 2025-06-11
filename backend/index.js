@@ -5,25 +5,12 @@ const pool = require('./db');
 const jwt = require('jsonwebtoken');
 const nodemailer = require('nodemailer');
 const dotenv = require('dotenv');
-const multer = require('multer');
-const { Client } = require('@gradio/client');
-const upload = multer();
-
-// Helper untuk dynamic CORS origin (Netlify & localhost)
-function getAllowedOrigin(req) {
-  const allowed = [
-    'http://localhost:5173',
-    'https://foodlens.netlify.app',
-  ];
-  const origin = req.headers.origin;
-  if (allowed.includes(origin)) return origin;
-  return '*'; // fallback ke * agar tidak error CORS di dev/preview
-}
 
 dotenv.config();
 
 const app = express();
 
+app.use(cors());
 app.use(express.json());
 
 const JWT_SECRET = process.env.JWT_SECRET || 'your_jwt_secret_key';
@@ -165,31 +152,6 @@ app.get('/api/makanan', async (req, res) => {
     res.json({ message: 'Success', data: result.rows });
   } catch (err) {
     res.status(500).json({ message: err.message, data: null });
-  }
-});
-
-// Handler CORS manual untuk semua method di /api/predict
-app.use('/api/predict', (req, res, next) => {
-  res.setHeader('Access-Control-Allow-Origin', getAllowedOrigin(req));
-  res.setHeader('Access-Control-Allow-Methods', 'GET,POST,OPTIONS');
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
-  if (req.method === 'OPTIONS') {
-    res.status(204).end();
-    return;
-  }
-  next();
-});
-
-app.post('/api/predict', upload.single('file'), async (req, res) => {
-  try {
-    if (!req.file) return res.status(400).json({ error: 'No file uploaded' });
-    const client = await Client.connect('rickysptra24/FoodLens');
-    const result = await client.predict('/predict', {
-      image: req.file.buffer,
-    });
-    res.json(result.data);
-  } catch (err) {
-    res.status(500).json({ error: 'Prediction failed', detail: err.message });
   }
 });
 
