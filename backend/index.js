@@ -9,11 +9,21 @@ const multer = require('multer');
 const { Client } = require('@gradio/client');
 const upload = multer();
 
+// Helper untuk dynamic CORS origin (Netlify & localhost)
+function getAllowedOrigin(req) {
+  const allowed = [
+    'http://localhost:5173',
+    'https://foodlens.netlify.app',
+  ];
+  const origin = req.headers.origin;
+  if (allowed.includes(origin)) return origin;
+  return allowed[0]; // fallback ke localhost
+}
+
 dotenv.config();
 
 const app = express();
 
-app.use(cors());
 app.use(express.json());
 
 const JWT_SECRET = process.env.JWT_SECRET || 'your_jwt_secret_key';
@@ -157,17 +167,6 @@ app.get('/api/makanan', async (req, res) => {
     res.status(500).json({ message: err.message, data: null });
   }
 });
-
-// Helper untuk dynamic CORS origin (Netlify & localhost)
-function getAllowedOrigin(req) {
-  const allowed = [
-    'http://localhost:5173',
-    'https://foodlens.netlify.app',
-  ];
-  const origin = req.headers.origin;
-  if (allowed.includes(origin)) return origin;
-  return allowed[0]; // fallback ke localhost
-}
 
 // Handler OPTIONS untuk /api/predict agar CORS preflight selalu OK
 app.options('/api/predict', (req, res) => {
